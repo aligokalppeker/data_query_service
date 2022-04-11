@@ -1,6 +1,7 @@
+import json
 from datetime import datetime
 
-from django.db.models import Avg, QuerySet
+from django.db.models import Avg, QuerySet, Max, Min, Q, Count
 from django.db.models.functions import TruncMonth
 from rest_framework import views, status
 from rest_framework.response import Response
@@ -8,6 +9,9 @@ from rest_framework.response import Response
 # Create your views here.
 from .models import AveragePriceBusinessModel, HousePersistenceModel, HOUSE_TYPES
 from .serializers import AveragePricesBusinessModelSerializer
+
+MIN_PRICE_FIELD = "min_price"
+MAX_PRICE_FIELD = "max_price"
 
 
 class ViewCommon:
@@ -29,7 +33,7 @@ class ViewCommon:
         :param postal_code: Postal code
         :return: Query set for results
         """
-        filtered_data = HousePersistenceModel.objects.filter(sell_date__gte=start_date, sell_date__lte=end_date)
+        filtered_data = HousePersistenceModel.objects.filter(sell_date__gte=start_date, sell_date__lt=end_date)
         if postal_code:
             filtered_data = filtered_data.filter(postal_code__exact=postal_code)
         return filtered_data
@@ -48,10 +52,11 @@ class GetAveragePricesView(views.APIView):
         :param postal_code: Postal code, empty string to select all
         :return: Filtered and serialized data
         """
-        filtered_data = ViewCommon.get_houses_filtered_by_date(start_date, end_date, postal_code)
-        filtered_data = filtered_data.filter(house_type__exact=house_type)
-        month_grouped_data = filtered_data.annotate(month_year_date=TruncMonth("sell_date")).values("month_year_date")
-        result = month_grouped_data.annotate(mean_sell_price=Avg("sell_price"))
+        filtered_data: QuerySet = ViewCommon.get_houses_filtered_by_date(start_date, end_date, postal_code)
+        filtered_data: QuerySet = filtered_data.filter(house_type__exact=house_type)
+        month_grouped_data: QuerySet = filtered_data.annotate(month_year_date=TruncMonth("sell_date")).values(
+            "month_year_date")
+        result: QuerySet = month_grouped_data.annotate(mean_sell_price=Avg("sell_price"))
         model_outputs = []
         for data in result:
             model_outputs.append(AveragePriceBusinessModel(**data))
@@ -59,6 +64,9 @@ class GetAveragePricesView(views.APIView):
 
     def get(self, request, start_date: datetime, end_date: datetime, postal_code: str = "", *args, **kwargs):
         result_response: dict[str, str] = {}
+        # We lift the front end developers' job easier by querying data for each home types.
+        # But we are compromising performance.
+        # For better performance we can do it in one query and shift the segmentation job to the front-end side.
         for home_type_and_desc in HOUSE_TYPES:
             result_response[home_type_and_desc[1]] = self.get_data_for_house_type(start_date=start_date,
                                                                                   end_date=ViewCommon.get_next_month(
@@ -71,8 +79,25 @@ class GetAveragePricesView(views.APIView):
 
 class NumberOfTransactionsView(views.APIView):
 
-    def get(self, request, date: datetime, postal_code: str = "", *args, **kwargs):
-        filtered_data = ViewCommon.get_houses_filtered_by_date(start_date=date,
-                                                               end_date=ViewCommon.get_next_month(date),
-                                                               postal_code=postal_code)
-        return Response({"data": "results"}, status=status.HTTP_200_OK)
+    def get(self, request, bin_count: int, date: datetime, postal_code: str = "", *args, **kwargs):
+        filtered_data: QuerySet = ViewCommon.get_houses_filtered_by_date(start_date=date,
+                                                                         end_date=ViewCommon.get_next_month(date),
+                                                                         postal_code=postal_code)
+        min_max_range: QuerySet = filtered_data.aggregate(max_price=Max("sell_price"), min_price=Min("sell_price"))
+        max_price: int = min_max_range[MAX_PRICE_FIELD]
+        min_price: int = min_max_range[MIN_PRICE_FIELD]
+
+        step: float = (max_price - min_price) / bin_count
+        histogram_aggregate_params: dict[str, Count] = {}
+        bins: dict[str, tuple[int, int]] = dict()
+        for idx in range(0, bin_count):
+            bin_price_start: float = min_price + (idx * step)
+            bin_price_end: float = bin_price_start + step
+            key_val_for_query = f"bin_{idx}"
+            bins[key_val_for_query] = (int(bin_price_start), int(bin_price_end))
+            histogram_aggregate_params[key_val_for_query] = Count("pk", filter=Q(
+                sell_price__gte=bin_price_start) and Q(sell_price__lte=bin_price_end))
+        histogram: dict[str, int] = filtered_data.aggregate(**histogram_aggregate_params)
+        return Response({"bins_range": json.dumps(list(bins.values())),
+                         "data": json.dumps(list(histogram.values()))},
+                        status=status.HTTP_200_OK)

@@ -61,6 +61,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/avgprice/<yyyymm:start_date>/<yyyymm:end_date>", GetAveragePricesView.as_view()),
     path("api/avgprice/<yyyymm:start_date>/<yyyymm:end_date>/<ppp_ppp:postal_code>", GetAveragePricesView.as_view()),
-    path("api/transaction/<yyyymm:date>", NumberOfTransactionsView.as_view()),
-    path("api/transaction/<yyyymm:date>/<ppp_ppp:postal_code>", NumberOfTransactionsView.as_view()),
+    path("api/transaction/<int:bin_count>/<yyyymm:date>", NumberOfTransactionsView.as_view()),
+    path("api/transaction/<int:bin_count>/<yyyymm:date>/<ppp_ppp:postal_code>", NumberOfTransactionsView.as_view()),
 ]
