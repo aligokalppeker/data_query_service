@@ -43,7 +43,4 @@ class Migration(migrations.Migration):
                              ('T', 'terraced')], default='F', max_length=1)),
             ],
         ),
-        migrations.RunPython(
-            lambda apps, schema_editor: import_house_items(apps=apps, schema_editor=schema_editor, import_limit=-1,
-                                                           file_url="http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/pp-complete.csv")),
     ]
