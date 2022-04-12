@@ -26,7 +26,8 @@ def import_house_items(apps, schema_editor, import_limit: int, file_url: str):
         if chunk:
             data: str = chunk.decode("utf-8")
             fields: [str] = data.replace("\"", "").split(",")
-            print("Importing row", record_count)
+            if record_count % 1000 == 0:
+                print("Importing row:", record_count)
             HousePersistenceModel(house_uuid=fields[0].replace("{", "").replace("}", ""),
                                   postal_code=fields[3],
                                   primary_addressable_object_name=fields[8],
