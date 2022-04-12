@@ -16,5 +16,5 @@ class Migration(migrations.Migration):
             lambda apps, schema_editor: import_house_items(apps=apps, schema_editor=schema_editor,
                                                            bulk_commit_size=int(os.environ.get("BULK_COMMIT_SIZE", 1000)),
                                                            import_limit=int(os.environ.get("IMPORT_LIMIT", -1)),
-                                                           file_url=os.environ.get("IMPORT_LIMIT", ""))),
+                                                           file_url=os.environ.get("URL_TO_IMPORT", ""))),
     ]
