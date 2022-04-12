@@ -5,15 +5,14 @@ import requests
 # Give import limit as -1, not to limit the rows to be imported
 from requests import Response
 
-import_limit: int = 50000
-file_url: str = "http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/pp-complete.csv"
 
-
-def import_house_items(apps, schema_editor):
+def import_house_items(apps, schema_editor, import_limit: int, file_url: str):
     """
     Method for importing houses during the migration process
     :param apps: apps container
     :param schema_editor: schema editor instance
+    :param import_limit: row limit for import, -1 for limitless import(can be used during development)
+    :param file_url: url to import data from
     :return: None
     """
     if import_limit != -1:

@@ -29,7 +29,7 @@ class DateConverter:
     Date converter class for the URL, it takes year and month as input separated with hypen,
     such as 2021-10, input is automatically converted to datetime type of variable
     """
-    regex = "\\d{4}-\\d{2}"
+    regex: str = "\\d{4}-\\d{2}"
 
     def to_python(self, value):
         return datetime.strptime(value, "%Y-%m")
@@ -46,7 +46,7 @@ class PostalCodeConverter:
     Postal code converter, which takes a postal input with underscore "AAA_BBB" and converts it to "AAA BBB", by
     replacing underscore to space.
     """
-    regex = "[a-zA-Z0-9_]+"
+    regex: str = "[a-zA-Z0-9_]+"
 
     def to_python(self, value):
         return value.replace("_", " ")
