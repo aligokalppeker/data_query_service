@@ -1,10 +1,12 @@
 from datetime import datetime
 
 import requests
-
 # Data may have too many rows, and we may want to limit the imported rows for migration
 # Give import limit as -1, not to limit the rows to be imported
+from requests import Response
+
 import_limit: int = 50000
+file_url: str = "http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/pp-complete.csv"
 
 
 def import_house_items(apps, schema_editor):
@@ -14,11 +16,12 @@ def import_house_items(apps, schema_editor):
     :param schema_editor: schema editor instance
     :return: None
     """
+    if import_limit != -1:
+        print("Importing limited count of rows:", import_limit)
     HousePersistenceModel = apps.get_model("server_app_api", "HousePersistenceModel")
-    file_url = "http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/pp-complete.csv"
-    req = requests.get(file_url, stream=True)
-    record_count = 0
-    print("Importing at most count:", import_limit)
+    req: Response = requests.get(file_url, stream=True)
+    record_count: int = 0
+
     for chunk in req.iter_lines():
         # writing one chunk at a time to db
         if chunk:
