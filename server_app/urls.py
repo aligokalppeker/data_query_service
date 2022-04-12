@@ -29,16 +29,16 @@ class DateConverter:
     Date converter class for the URL, it takes year and month as input separated with hypen,
     such as 2021-10, input is automatically converted to datetime type of variable
     """
-    regex: str = "\\d{4}-\\d{2}"
+    regex: str = "\\d{4}_\\d{2}"
 
     def to_python(self, value):
-        return datetime.strptime(value, "%Y-%m")
+        return datetime.strptime(value, "%Y_%m")
 
     def to_url(self, value):
         return value
 
 
-register_converter(DateConverter, 'yyyymm')
+register_converter(DateConverter, "yyyy_mm")
 
 
 class PostalCodeConverter:
@@ -59,8 +59,8 @@ register_converter(PostalCodeConverter, 'ppp_ppp')
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/avgprice/<yyyymm:start_date>/<yyyymm:end_date>", GetAveragePricesView.as_view()),
-    path("api/avgprice/<yyyymm:start_date>/<yyyymm:end_date>/<ppp_ppp:postal_code>", GetAveragePricesView.as_view()),
-    path("api/transaction/<int:bin_count>/<yyyymm:date>", NumberOfTransactionsView.as_view()),
-    path("api/transaction/<int:bin_count>/<yyyymm:date>/<ppp_ppp:postal_code>", NumberOfTransactionsView.as_view()),
+    path("api/avgprice/<yyyy_mm:start_date>/<yyyy_mm:end_date>", GetAveragePricesView.as_view()),
+    path("api/avgprice/<yyyy_mm:start_date>/<yyyy_mm:end_date>/<ppp_ppp:postal_code>", GetAveragePricesView.as_view()),
+    path("api/transaction/<int:bin_count>/<yyyy_mm:date>", NumberOfTransactionsView.as_view()),
+    path("api/transaction/<int:bin_count>/<yyyy_mm:date>/<ppp_ppp:postal_code>", NumberOfTransactionsView.as_view()),
 ]
