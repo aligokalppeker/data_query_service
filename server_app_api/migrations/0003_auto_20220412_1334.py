@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(
             lambda apps, schema_editor: import_house_items(apps=apps, schema_editor=schema_editor,
-                                                           bulk_commit_size=1000, import_limit=50000,
+                                                           bulk_commit_size=1000, import_limit=-1,
                                                            file_url="http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/pp-complete.csv")),
     ]
